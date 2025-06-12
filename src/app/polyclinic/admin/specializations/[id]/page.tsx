@@ -37,7 +37,7 @@ export default function SpecializationDoctors() {
       setLoading(true)
       const token = getAuthToken()
 
-      const response = await fetch(`http://localhost:8082/MyHelp/specializations/${id}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/MyHelp/specializations/${id}`, {
         headers: {
           Authorization: `Bearer ${token}`
         }
@@ -101,7 +101,7 @@ export default function SpecializationDoctors() {
         }
       }
 
-      const response = await fetch(`http://localhost:8082/MyHelp/doctors/${doctorID}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/MyHelp/doctors/${doctorID}`, {
         method: 'DELETE',
         headers: {
           Authorization: `Bearer ${token}`
@@ -125,7 +125,7 @@ export default function SpecializationDoctors() {
       const token = getAuthToken()
       if (!token) throw new Error('Требуется авторизация')
 
-      const response = await fetch('http://localhost:8082/MyHelp/doctors', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/MyHelp/doctors`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -175,7 +175,7 @@ export default function SpecializationDoctors() {
       params.append('end_time', formatTime(newSchedule.end_time))
       params.append('reception_time', newSchedule.reception_time)
 
-      const url = `http://localhost:8082/MyHelp/schedule/doctors/${doctorID}?${params.toString()}`
+      const url = `${process.env.NEXT_PUBLIC_API_URL}/MyHelp/schedule/doctors/${doctorID}?${params.toString()}`
 
       const response = await fetch(url, {
         method: 'POST',

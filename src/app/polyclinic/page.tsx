@@ -1,15 +1,22 @@
-"use client"; // Добавляем эту директиву в начало файла
+"use client";
 
 import Link from 'next/link'
 import styles from './Home.module.css'
 import { useEffect, useState } from 'react'
 import { getClientAuthData } from '@/lib/client-auth'
 
-// Компонент карточки специализации
-function SpecializationCard({ specialization }) {
+// Типизация специализации
+type Specialization = {
+  specializationID: string
+  specialization: string
+  description: string
+}
+
+// Компонент карточки специализации с типами
+function SpecializationCard({ specialization }: { specialization: Specialization }) {
   return (
-    <Link 
-    href={`/polyclinic/doctors/specialization/${specialization.specializationID}`}
+    <Link
+      href={`/polyclinic/doctors/specialization/${specialization.specializationID}`}
       className={styles.specCardLink}
     >
       <div className={styles.specCard}>
@@ -21,9 +28,9 @@ function SpecializationCard({ specialization }) {
 }
 
 export default function Home() {
-  const [specializations, setSpecializations] = useState([])
+  const [specializations, setSpecializations] = useState<Specialization[]>([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
+  const [error, setError] = useState<string | null>(null)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
 
   useEffect(() => {
@@ -31,21 +38,23 @@ export default function Home() {
     setIsAuthenticated(!!authData?.accessToken)
   }, [])
 
-
   // Получаем данные о специализациях
   useEffect(() => {
     const fetchSpecializations = async () => {
       try {
-        const response = await fetch('http://localhost:8082/MyHelp/specializations')
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/MyHelp/specializations`)
         if (!response.ok) {
           throw new Error('Не удалось загрузить данные')
         }
         const data = await response.json()
         if (data.status === 'success') {
           setSpecializations(data.data)
+        } else {
+          setSpecializations([])
+          setError('Данные о специализациях не получены')
         }
-      } catch (err) {
-        setError(err.message)
+      } catch (err: any) {
+        setError(err?.message || 'Неизвестная ошибка')
       } finally {
         setLoading(false)
       }
@@ -60,8 +69,8 @@ export default function Home() {
         <div className={styles.headerContent}>
           <h1 className={styles.logo}>Поликлиника №1</h1>
           <nav className={styles.nav}>
-            <Link 
-              href={isAuthenticated ? "/polyclinic/auth/account" : "/polyclinic/auth"} 
+            <Link
+              href={isAuthenticated ? "/polyclinic/auth/account" : "/polyclinic/auth"}
               className={styles.navLink}
             >
               {isAuthenticated ? "Личный кабинет" : "Войти"}
@@ -69,46 +78,46 @@ export default function Home() {
           </nav>
         </div>
       </header>
-      
+
       <main className={styles.main}>
         <div className={styles.welcomeCard}>
           <div className={styles.welcomeHeader}>
             <h2 className={styles.welcomeTitle}>Добро пожаловать в нашу поликлинику</h2>
             <p className={styles.welcomeSubtitle}>Качественная медицинская помощь для всей семьи</p>
           </div>
-          
+
           <div className={styles.content}>
             <p className={styles.paragraph}>
-              Мы предлагаем широкий спектр медицинских услуг для взрослых и детей. 
+              Мы предлагаем широкий спектр медицинских услуг для взрослых и детей.
               В нашей поликлинике работают высококвалифицированные специалисты с большим опытом работы.
             </p>
             {/* Специализации */}
-        <section className={styles.specializations}>
-          <div className={styles.specContainer}>
-            <h2 className={styles.specSectionTitle}>Наши услуги и специалисты</h2>
-            {loading ? (
-              <p className={styles.loading}>Загрузка данных...</p>
-            ) : error ? (
-              <p className={styles.error}>Ошибка: {error}</p>
-            ) : (
-              <div className={styles.grid}>
-                {specializations.length > 0 ? (
-                  specializations.map((spec) => (
-                    <SpecializationCard key={spec.specializationID} specialization={spec} />
-                  ))
+            <section className={styles.specializations}>
+              <div className={styles.specContainer}>
+                <h2 className={styles.specSectionTitle}>Наши услуги и специалисты</h2>
+                {loading ? (
+                  <p className={styles.loading}>Загрузка данных...</p>
+                ) : error ? (
+                  <p className={styles.error}>Ошибка: {error}</p>
                 ) : (
-                  <p className={styles.noData}>Специализации не найдены</p>
+                  <div className={styles.grid}>
+                    {specializations.length > 0 ? (
+                      specializations.map((spec) => (
+                        <SpecializationCard key={spec.specializationID} specialization={spec} />
+                      ))
+                    ) : (
+                      <p className={styles.noData}>Специализации не найдены</p>
+                    )}
+                  </div>
                 )}
               </div>
-            )}
-          </div>
-        </section>
+            </section>
             <div className={styles.infoSection}>
               <h3 className={styles.infoTitle}>Часы работы:</h3>
               <p className={styles.infoText}>Пн-Пт с 8:00 до 20:00</p>
               <p className={styles.infoText}>Сб с 9:00 до 15:00</p>
             </div>
-            
+
             <div className={styles.infoSection}>
               <h3 className={styles.infoTitle}>Контакты:</h3>
               <p className={styles.infoText}>Телефон для справок: <strong>+7 (123) 456-78-90</strong></p>
@@ -117,8 +126,6 @@ export default function Home() {
             </div>
           </div>
         </div>
-
-        
       </main>
     </div>
   )

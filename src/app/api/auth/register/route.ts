@@ -8,7 +8,7 @@ export async function POST(request: Request) {
     // Хешируем пароль перед отправкой (так же как при авторизации)
     const hashedPassword = await bcrypt.hash(password, 10)
     console.log('Generated hash:', hashedPassword)
-    const apiResponse = await fetch('http://localhost:8082/MyHelp/auth/signin', {
+    const apiResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/MyHelp/auth/signin`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

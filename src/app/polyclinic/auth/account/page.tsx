@@ -31,6 +31,8 @@ interface RatingState {
   [key: number]: number | null; // appointmentID: rating
 }
 
+
+
 export default function AccountPage() {
   const [patientData, setPatientData] = useState<PatientData | null>(null)
   const [loading, setLoading] = useState(true)
@@ -46,7 +48,27 @@ export default function AccountPage() {
     polic: '',
     email: ''
   })
+  const [fieldErrors, setFieldErrors] = useState({
+  surname: { hasError: false, message: '' },
+  name: { hasError: false, message: '' },
+  polic: { hasError: false, message: '' },
+  email: { hasError: false, message: '' }
+});
   const router = useRouter()
+  const validateEmail = (email: string) => {
+  const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return re.test(email);
+};
+
+
+  useEffect(() => {
+  console.log('Field errors updated:', fieldErrors);
+}, [fieldErrors]);
+useEffect(() => {
+  if (isEditing) {
+    validateFields();
+  }
+}, [editData, isEditing]);
 
   useEffect(() => {
     const fetchPatientData = async () => {
@@ -61,7 +83,7 @@ export default function AccountPage() {
 
         // 2. Загружаем данные пациента
         const response = await fetch(
-          `http://localhost:8082/MyHelp/account?patientID=${authData.patientID}`,
+          `${process.env.NEXT_PUBLIC_API_URL}/MyHelp/account?patientID=${authData.patientID}`,
           {
             headers: {
               'Authorization': `Bearer ${authData.accessToken}`
@@ -101,6 +123,34 @@ export default function AccountPage() {
     clientLogout()
     router.push('/polyclinic/auth')
   }
+
+const validateFields = () => {
+  const newErrors = {
+    surname: {
+      hasError: !editData.surname.trim(),
+      message: !editData.surname.trim() ? 'Фамилия обязательна' : ''
+    },
+    name: {
+      hasError: !editData.name.trim(),
+      message: !editData.name.trim() ? 'Имя обязательно' : ''
+    },
+    polic: {
+      hasError: !editData.polic.trim(),
+      message: !editData.polic.trim() ? 'Номер полиса обязателен' : ''
+    },
+    email: {
+      hasError: !editData.email.trim() || !validateEmail(editData.email),
+      message: !editData.email.trim() 
+        ? 'Email обязателен' 
+        : !validateEmail(editData.email)
+          ? 'Некорректный формат email' 
+          : ''
+    }
+  };
+
+  setFieldErrors(newErrors);
+  return !Object.values(newErrors).some(error => error.hasError);
+};
 
   const filteredAppointments = patientData?.appointments?.filter(appointment => {
     if (activeTab === 'all') return true;
@@ -142,55 +192,67 @@ export default function AccountPage() {
   }
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target
-    setEditData(prev => ({
+  const { name, value } = e.target;
+  setEditData(prev => ({ ...prev, [name]: value }));
+  
+  // Сбрасываем ошибку при вводе
+  if (fieldErrors[name as keyof typeof fieldErrors].hasError) {
+    setFieldErrors(prev => ({
       ...prev,
-      [name]: value
-    }))
+      [name]: { hasError: false, message: '' }
+    }));
   }
+};
 
   const handleSaveChanges = async () => {
-    try {
-      const authData = getClientAuthData()
-      if (!authData) {
-        router.push('/polyclinic/auth')
-        return
-      }
-
-      const response = await fetch(
-        `http://localhost:8082/MyHelp/account?patientID=${authData.patientID}`,
-        {
-          method: 'PUT',
-          headers: {
-            'Authorization': `Bearer ${authData.accessToken}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            surname: editData.surname,
-            name: editData.name,
-            patronymic: editData.patronymic,
-            polic: editData.polic,
-            email: editData.email
-          })
-        }
-      )
-
-      if (!response.ok) {
-        throw new Error(`Ошибка при обновлении данных: ${response.status}`)
-      }
-
-      const data = await response.json()
-      if (data.status === 'success') {
-        setPatientData(prev => prev ? { ...prev, ...editData } : null)
-        setIsEditing(false)
-      } else {
-        throw new Error(data.message || 'Ошибка при обновлении данных')
-      }
-    } catch (err) {
-      console.error('Failed to update patient data:', err)
-      setError(err instanceof Error ? err.message : 'Неизвестная ошибка')
-    }
+    
+  const isValid = validateFields();
+  if (!isValid) {
+    return; 
   }
+
+  try {
+    const authData = getClientAuthData();
+    if (!authData) {
+      router.push('/polyclinic/auth');
+      return;
+    }
+
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/MyHelp/account?patientID=${authData.patientID}`,
+      {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${authData.accessToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          surname: editData.surname,
+          name: editData.name,
+          patronymic: editData.patronymic,
+          polic: editData.polic,
+          email: editData.email
+        })
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`Ошибка при обновлении данных: ${response.status}`);
+    }
+
+    const data = await response.json();
+    if (data.status === 'success') {
+      setPatientData(prev => prev ? { ...prev, ...editData } : null);
+      setIsEditing(false);
+    } else {
+      throw new Error(data.message || 'Ошибка при обновлении данных');
+    }
+  } catch (err) {
+    console.error('Failed to update patient data:', err);
+    setError(err instanceof Error ? err.message : 'Неизвестная ошибка');
+  }
+}
+
 
   const handleCancelEdit = () => {
     setIsEditing(false)
@@ -221,7 +283,7 @@ export default function AccountPage() {
   
       // 2. Проверяем доступность сервера
       try {
-        const preflight = await fetch(`http://localhost:8082`, { method: 'OPTIONS' });
+        const preflight = await fetch(`${process.env.NEXT_PUBLIC_API_URL}`, { method: 'OPTIONS' });
         console.log('[Rating] CORS Preflight:', {
           status: preflight.status,
           headers: Object.fromEntries(preflight.headers.entries())
@@ -247,7 +309,7 @@ export default function AccountPage() {
   
       // 4. Отправляем запрос
       const response = await fetch(
-        `http://localhost:8082/MyHelp/schedule/appointments/${appointmentId}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/MyHelp/schedule/appointments/${appointmentId}`,
         requestInit
       );
   
@@ -328,11 +390,11 @@ export default function AccountPage() {
   
       console.log('[Appointment] Sending DELETE request');
       const response = await fetch(
-        `http://localhost:8082/MyHelp/schedule/appointments/${appointmentId}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/MyHelp/schedule/appointments/${appointmentId}`,
         {
           method: 'DELETE',
           headers: {
-            //'Authorization': `Bearer ${authData.accessToken}`,
+            'Authorization': `Bearer ${authData.accessToken}`,
             'Content-Type': 'application/json'
           }
         }
@@ -420,67 +482,88 @@ export default function AccountPage() {
             <h2 className={styles.sectionTitle}>Личные данные</h2>
             
             {isEditing ? (
-              <div className={styles.editForm}>
-                <div className={styles.formGroup}>
-                  <label className={styles.editLabel}>Фамилия:</label>
-                  <input
-                    type="text"
-                    name="surname"
-                    value={editData.surname}
-                    onChange={handleInputChange}
-                    className={styles.editInput}
-                  />
-                </div>
-                <div className={styles.formGroup}>
-                  <label className={styles.editLabel}>Имя:</label>
-                  <input
-                    type="text"
-                    name="name"
-                    value={editData.name}
-                    onChange={handleInputChange}
-                    className={styles.editInput}
-                  />
-                </div>
-                <div className={styles.formGroup}>
-                  <label className={styles.editLabel}>Отчество:</label>
-                  <input
-                    type="text"
-                    name="patronymic"
-                    value={editData.patronymic}
-                    onChange={handleInputChange}
-                    className={styles.editInput}
-                  />
-                </div>
-                <div className={styles.formGroup}>
-                  <label className={styles.editLabel}>Номер полиса:</label>
-                  <input
-                    type="text"
-                    name="polic"
-                    value={editData.polic}
-                    onChange={handleInputChange}
-                    className={styles.editInput}
-                  />
-                </div>
-                <div className={styles.formGroup}>
-                  <label className={styles.editLabel}>Email:</label>
-                  <input
-                    type="email"
-                    name="email"
-                    value={editData.email}
-                    onChange={handleInputChange}
-                    className={styles.editInput}
-                  />
-                </div>
-                <div className={styles.editButtons}>
-                  <button onClick={handleSaveChanges} className={styles.saveButton}>
-                    Сохранить
-                  </button>
-                  <button onClick={handleCancelEdit} className={styles.cancelButton}>
-                    Отмена
-                  </button>
-                </div>
-              </div>
-            ) : (
+  <div className={styles.editForm}>
+    <div className={styles.formGroup}>
+      <label className={styles.editLabel}>Фамилия:</label>
+      <input
+        type="text"
+        name="surname"
+        value={editData.surname}
+        onChange={handleInputChange}
+        className={`${styles.editInput} ${fieldErrors.surname ? styles.errorInput : ''}`}
+      />
+      {fieldErrors.surname && <span className={styles.errorText}>Поле обязательно для заполнения</span>}
+    </div>
+    <div className={styles.formGroup}>
+      <label className={styles.editLabel}>Имя:</label>
+      <input
+        type="text"
+        name="name"
+        value={editData.name}
+        onChange={handleInputChange}
+        className={`${styles.editInput} ${fieldErrors.name ? styles.errorInput : ''}`}
+      />
+      {fieldErrors.name && <span className={styles.errorText}>Поле обязательно для заполнения</span>}
+    </div>
+    <div className={styles.formGroup}>
+      <label className={styles.editLabel}>Отчество:</label>
+      <input
+        type="text"
+        name="patronymic"
+        value={editData.patronymic}
+        onChange={handleInputChange}
+        className={styles.editInput}
+      />
+    </div>
+    <div className={styles.formGroup}>
+      <label className={styles.editLabel}>Номер полиса:</label>
+      <input
+        type="text"
+        name="polic"
+        value={editData.polic}
+        onChange={handleInputChange}
+        className={`${styles.editInput} ${fieldErrors.polic ? styles.errorInput : ''}`}
+      />
+      {fieldErrors.polic && <span className={styles.errorText}>Поле обязательно для заполнения</span>}
+    </div>
+    <div className={styles.formGroup}>
+  <label className={styles.editLabel}>Email:</label>
+  <input
+    type="email"
+    name="email"
+    value={editData.email}
+    onChange={handleInputChange}
+    className={`${styles.editInput} ${
+      fieldErrors.email.hasError ? `${styles.inputError} ${styles.shake}` : ''
+    }`}
+  />
+  <div className={styles.errorMessage}>
+    {fieldErrors.email.message}
+  </div>
+</div>
+    <div className={styles.editButtons}>
+      <button 
+  onClick={handleSaveChanges} 
+  className={styles.saveButton}
+  disabled={
+    fieldErrors.surname.hasError ||
+    fieldErrors.name.hasError ||
+    fieldErrors.polic.hasError ||
+    fieldErrors.email.hasError ||
+    !editData.surname ||
+    !editData.name ||
+    !editData.polic ||
+    !editData.email
+  }
+>
+  Сохранить
+</button>
+      <button onClick={handleCancelEdit} className={styles.cancelButton}>
+        Отмена
+      </button>
+    </div>
+  </div>
+) : (
               <>
                 <div className={styles.profileInfo}>
                   <div className={styles.infoRow}>

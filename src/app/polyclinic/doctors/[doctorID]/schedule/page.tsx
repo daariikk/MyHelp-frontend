@@ -7,6 +7,7 @@ import styles from './Schedule.module.css';
 import BackButton from '@/components/BackButton';
 import BookingModal from '@/components/BookingModal';
 import { ErrorDisplay } from '@/components/ErrorDisplay';
+import { getClientAuthData } from '@/lib/client-auth'
 
 export default function DoctorSchedulePage({ 
   params,
@@ -29,6 +30,12 @@ export default function DoctorSchedulePage({
   const [refreshTrigger, setRefreshTrigger] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<{status: number; message: string} | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  
+    useEffect(() => {
+      const authData = getClientAuthData()
+      setIsAuthenticated(!!authData?.accessToken)
+    }, [])
 
   const refreshData = () => {
     setRefreshTrigger(prev => !prev);
@@ -46,7 +53,7 @@ export default function DoctorSchedulePage({
         setError(null);
         
         const res = await fetch(
-          `http://localhost:8082/MyHelp/schedule/doctors/${doctorID}?date=${date}`,
+          `${process.env.NEXT_PUBLIC_API_URL}/MyHelp/schedule/doctors/${doctorID}?date=${date}`,
           { cache: 'no-store' }
         );
         
@@ -113,7 +120,12 @@ export default function DoctorSchedulePage({
           <h1 className={styles.logo}>Поликлиника №1</h1>
           <nav className={styles.nav}>
             <Link href="/polyclinic" className={styles.navLink}>Главная</Link>
-            <Link href="/polyclinic/auth" className={styles.navLink}>Личный кабинет</Link>
+            <Link 
+              href={isAuthenticated ? "/polyclinic/auth/account" : "/polyclinic/auth"} 
+              className={styles.navLink}
+            >
+              {isAuthenticated ? "Личный кабинет" : "Войти"}
+            </Link>
           </nav>
         </div>
       </header>

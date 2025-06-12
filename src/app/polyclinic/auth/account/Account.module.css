@@ -305,11 +305,12 @@
 }
 
 .editInput {
-  width: 100%;
+  width: 90%;
   padding: 8px 12px;
   border: 1px solid #ddd;
   border-radius: 4px;
   font-size: 16px;
+  transition: border 0.3s ease;
 }
 
 .editButtons {
@@ -419,4 +420,53 @@
 
 .sortButton:hover {
   background-color: #e9e9e9;
+}
+
+.errorInput {
+  border: 2px solid #707070 !important;
+  background-color: #fff0f0;
+}
+
+.errorText {
+  color: #707070;
+  font-size: 0.8rem;
+  margin-top: 0.2rem;
+  display: block;
+}
+
+
+/* Анимация для привлечения внимания */
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.7; }
+  100% { opacity: 1; }
+}
+
+.errorInput:focus {
+  animation: pulse 1.5s infinite;
+}
+
+
+
+.inputError {
+  border: 2px solid #707070 !important;
+  background-color: #fff8f8;
+}
+
+.errorMessage {
+  color: #707070;
+  font-size: 0.8rem;
+  margin-top: 4px;
+  height: 16px; /* Фиксированная высота чтобы не прыгала верстка */
+}
+
+/* Анимация для ошибок */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-4px); }
+  40%, 80% { transform: translateX(4px); }
+}
+
+.shake {
+  animation: shake 0.5s;
 }

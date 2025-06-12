@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
 
-const API_BASE_URL = 'http://localhost:8082'
+const API_BASE_URL = `${process.env.NEXT_PUBLIC_API_URL}`
 
 export async function POST(request: Request) {
   try {

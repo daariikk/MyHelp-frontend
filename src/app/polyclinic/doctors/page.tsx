@@ -4,15 +4,28 @@ import Link from 'next/link'
 import styles from './Doctors.module.css'
 import { useEffect, useState } from 'react'
 
+// Явная типизация для врача
+type Doctor = {
+  doctorID: string;
+  surname: string;
+  name: string;
+  patronymic: string;
+  specialization: string;
+  education: string;
+  progress: string;
+  photo?: string;
+  rating?: number;
+}
+
 export default function AllDoctorsPage() {
-  const [doctors, setDoctors] = useState([])
+  const [doctors, setDoctors] = useState<Doctor[]>([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     const fetchDoctors = async () => {
       try {
-        const response = await fetch('http://localhost:8082/MyHelp/doctors')
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/MyHelp/doctors`)
         if (!response.ok) {
           throw new Error('Не удалось загрузить данные врачей')
         }
@@ -20,8 +33,8 @@ export default function AllDoctorsPage() {
         if (data.status === 'success') {
           setDoctors(data.data)
         }
-      } catch (err) {
-        setError(err.message)
+      } catch (err: any) {
+        setError(err?.message || 'Неизвестная ошибка')
       } finally {
         setLoading(false)
       }
@@ -68,7 +81,7 @@ export default function AllDoctorsPage() {
                       />
                     ) : (
                       <div className={styles.photoPlaceholder}>
-                        {doctor.surname.charAt(0)}{doctor.name.charAt(0)}
+                        {doctor.surname?.charAt(0) ?? "?"}{doctor.name?.charAt(0) ?? "?"}
                       </div>
                     )}
                   </div>
@@ -79,7 +92,7 @@ export default function AllDoctorsPage() {
                   <p className={styles.education}>{doctor.education}</p>
                   <p className={styles.progress}>{doctor.progress}</p>
                   <div className={styles.rating}>
-                    Рейтинг: {doctor.rating.toFixed(1)}
+                    Рейтинг: {typeof doctor.rating === 'number' ? doctor.rating.toFixed(1) : "Нет данных"}
                   </div>
                 </div>
               ))

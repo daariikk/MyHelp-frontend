@@ -34,7 +34,7 @@ export default function AdminDashboard() {
   const fetchSpecializations = async () => {
     try {
       setLoading(true)
-      const response = await fetch('http://localhost:8082/MyHelp/specializations')
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/MyHelp/specializations`)
     console.log('Сырые данные:', response)
   //const data = JSON.parse(raw)
 
@@ -63,7 +63,7 @@ export default function AdminDashboard() {
 
     try {
       const response = await fetch(
-        `http://localhost:8082/MyHelp/specializations/${id}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/MyHelp/specializations/${id}`,
         { method: 'DELETE' ,
           headers: {
             'Authorization': `Bearer ${token}`
@@ -96,7 +96,7 @@ const token = getAuthToken()
     
     try {
       const response = await fetch(
-        'http://localhost:8082/MyHelp/specializations',
+        `${process.env.NEXT_PUBLIC_API_URL}/MyHelp/specializations`,
         {
           method: 'POST',
           headers: {

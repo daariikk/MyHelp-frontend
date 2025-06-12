@@ -1,8 +1,8 @@
-// src/app/api/admin/logout/route.ts
-import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
+import { NextResponse } from 'next/server'
 
 export async function POST() {
-  cookies().delete('adminAuth')
+  const cookiesStore = await cookies();
+  cookiesStore.delete('adminAuth')
   return NextResponse.json({ status: 'success' })
 }

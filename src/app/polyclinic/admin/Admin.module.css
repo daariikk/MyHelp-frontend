@@ -267,7 +267,7 @@ color: #e74c3c;
 
 .formGroup input,
 .formGroup textarea {
-  width: 100%;
+  width: 96%;
   padding: 0.75rem;
   border: 1px solid #ddd;
   border-radius: 6px;

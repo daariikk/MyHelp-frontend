@@ -9,7 +9,7 @@ export async function POST(request: Request) {
     console.log('[Auth API] Login attempt for email:', email)
 
     // 1. Получаем данные пользователя
-    const userResponse = await fetch(`http://localhost:8082/MyHelp/auth/get-user?email=${encodeURIComponent(email)}`)
+    const userResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/MyHelp/auth/get-user?email=${encodeURIComponent(email)}`)
     const userData = await userResponse.json()
 
     if (!userResponse.ok || userData.status !== 'success') {
@@ -33,7 +33,7 @@ export async function POST(request: Request) {
     }
 
     // 3. Получаем токены
-    const authResponse = await fetch('http://localhost:8082/MyHelp/auth/signup', {
+    const authResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/MyHelp/auth/signup`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
